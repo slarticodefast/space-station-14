@@ -26,6 +26,12 @@ public sealed class ThrowingSystem : EntitySystem
 
     public const float PushbackDefault = 2f;
 
+    /// <summary>
+    /// Minimum flying time. Only used if compensateFriction==false.
+    /// This is needed because the item landing position can become very imprecise for low flying times.
+    /// We reduce the throwing velocity accordingly if needed.
+    /// </summary>
+    public const float MinFlyTime = 0.15f;
     public const float FlyTimePercentage = 0.8f;
 
     private float _frictionModifier;
@@ -158,11 +164,15 @@ public sealed class ThrowingSystem : EntitySystem
         if (tileFriction == 0f)
             compensateFriction = false; // cannot calculate this if there is no friction
 
+        var distance = direction.Length();
         // Set the time the item is supposed to be in the air so we can apply OnGround status.
         // This is a free parameter, but we should set it to something reasonable.
-        var flyTime = direction.Length() / baseThrowSpeed;
+        var flyTime = distance / baseThrowSpeed;
         if (compensateFriction)
             flyTime *= FlyTimePercentage;
+        else
+            // if the flyTime is of the same order of magitude as the physics tick time things get imprecise concerning the landing position
+            flyTime = Math.Max(flyTime, MinFlyTime);
         comp.ThrownTime = _gameTiming.CurTime;
         comp.LandTime = comp.ThrownTime + TimeSpan.FromSeconds(flyTime);
         comp.PlayLandSound = playSound;
@@ -196,7 +206,7 @@ public sealed class ThrowingSystem : EntitySystem
         // else let the item land on the cursor and from where it slides a little further.
         // This is an exact formula we get from exponentially decaying velocity after landing.
         // If someone changes how tile friction works at some point, this will have to be adjusted.
-        var throwSpeed = compensateFriction ? direction.Length() / (flyTime + 1 / tileFriction) : baseThrowSpeed;
+        var throwSpeed = compensateFriction ? distance / (flyTime + 1 / tileFriction) : distance / flyTime;
         var impulseVector = direction.Normalized() * throwSpeed * physics.Mass;
         _physics.ApplyLinearImpulse(uid, impulseVector, body: physics);
 
