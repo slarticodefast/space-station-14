@@ -37,13 +37,13 @@ public sealed class ContainmentFieldSystem : EntitySystem
             var fieldDir = Transform(uid).WorldPosition;
             var playerDir = Transform(otherBody).WorldPosition;
 
-            _throwing.TryThrow(otherBody, playerDir-fieldDir, baseThrowSpeed: component.ThrowForce);
+            _throwing.TryThrow(otherBody, (playerDir - fieldDir).Normalized() * component.ThrowDistance, baseThrowSpeed: component.ThrowSpeed);
         }
     }
 
     private void HandleEventHorizon(EntityUid uid, ContainmentFieldComponent component, ref EventHorizonAttemptConsumeEntityEvent args)
     {
-        if(!args.Cancelled && !args.EventHorizon.CanBreachContainment)
+        if (!args.Cancelled && !args.EventHorizon.CanBreachContainment)
             args.Cancelled = true;
     }
 }
