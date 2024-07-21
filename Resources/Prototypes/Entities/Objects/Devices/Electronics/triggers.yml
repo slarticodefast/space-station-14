@@ -72,3 +72,33 @@
   - type: PayloadTrigger
     components:
     - type: TriggerOnVoice
+
+- type: entity
+  parent: BaseItem
+  id: ProximitySensor
+  name: proximity sensor
+  description: Adds a machine link that is triggered by things in close proximity.
+  components:
+  - type: Sprite
+    sprite: Objects/Devices/proximity_sensor.rsi
+    state: icon
+  - type: Tag
+    tags:
+      - ProximitySensor
+  - type: StaticPrice
+    price: 40
+
+- type: entity
+  parent: BaseItem
+  id: HealthSensor
+  name: health sensor
+  description: Adds a machine link that is triggered by death or critical injury.
+  components:
+  - type: Sprite
+    sprite: Objects/Devices/health_sensor.rsi
+    state: health
+  - type: Tag
+    tags:
+      - HealthSensor
+  - type: StaticPrice
+    price: 40
