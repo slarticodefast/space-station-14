@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using Content.Shared.Crayon;
 using Content.Shared.Decals;
-using Robust.Client.GameObjects;
 using Robust.Shared.Prototypes;
 
 namespace Content.Client.Crayon.UI
@@ -42,6 +41,11 @@ namespace Content.Client.Crayon.UI
         public void SelectColor(Color color)
         {
             SendMessage(new CrayonColorMessage(color));
+        }
+
+        public void OnAngleChanged(Angle angle)
+        {
+            SendMessage(new CrayonAngleMessage(angle));
         }
 
         protected override void Dispose(bool disposing)

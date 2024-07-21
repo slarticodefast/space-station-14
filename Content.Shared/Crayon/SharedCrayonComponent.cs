@@ -8,7 +8,11 @@ namespace Content.Shared.Crayon
     {
         public string SelectedState { get; set; } = string.Empty;
 
-        [DataField("color")] public Color Color;
+        [DataField]
+        public Color Color;
+
+        [DataField]
+        public Angle Angle;
 
         [Serializable, NetSerializable]
         public enum CrayonUiKey : byte
@@ -34,6 +38,16 @@ namespace Content.Shared.Crayon
         public CrayonColorMessage(Color color)
         {
             Color = color;
+        }
+    }
+
+    [Serializable, NetSerializable]
+    public sealed class CrayonAngleMessage : BoundUserInterfaceMessage
+    {
+        public readonly Angle Angle;
+        public CrayonAngleMessage(Angle angle)
+        {
+            Angle = angle;
         }
     }
 
@@ -66,12 +80,14 @@ namespace Content.Shared.Crayon
         public string Selected;
         public bool SelectableColor;
         public Color Color;
+        public Angle Angle;
 
-        public CrayonBoundUserInterfaceState(string selected, bool selectableColor, Color color)
+        public CrayonBoundUserInterfaceState(string selected, bool selectableColor, Color color, Angle angle)
         {
             Selected = selected;
             SelectableColor = selectableColor;
             Color = color;
+            Angle = angle;
         }
     }
 }

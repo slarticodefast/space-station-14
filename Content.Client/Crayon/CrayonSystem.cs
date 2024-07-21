@@ -4,9 +4,7 @@ using Content.Client.Stylesheets;
 using Content.Shared.Crayon;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.GameObjects;
 using Robust.Shared.GameStates;
-using Robust.Shared.Localization;
 using Robust.Shared.Timing;
 
 namespace Content.Client.Crayon;
@@ -58,10 +56,10 @@ public sealed class CrayonSystem : SharedCrayonSystem
 
             _parent.UIUpdateNeeded = false;
             _label.SetMarkup(Robust.Shared.Localization.Loc.GetString("crayon-drawing-label",
-                ("color",_parent.Color),
-                ("state",_parent.SelectedState),
+                ("color", _parent.Color),
+                ("state", _parent.SelectedState),
                 ("charges", _parent.Charges),
-                ("capacity",_parent.Capacity)));
+                ("capacity", _parent.Capacity)));
         }
     }
 }

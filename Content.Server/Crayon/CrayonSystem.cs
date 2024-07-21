@@ -13,7 +13,6 @@ using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.GameStates;
-using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 
 namespace Content.Server.Crayon;
@@ -33,6 +32,7 @@ public sealed class CrayonSystem : SharedCrayonSystem
         SubscribeLocalEvent<CrayonComponent, ComponentInit>(OnCrayonInit);
         SubscribeLocalEvent<CrayonComponent, CrayonSelectMessage>(OnCrayonBoundUI);
         SubscribeLocalEvent<CrayonComponent, CrayonColorMessage>(OnCrayonBoundUIColor);
+        SubscribeLocalEvent<CrayonComponent, CrayonAngleMessage>(OnCrayonBoundUIAngle);
         SubscribeLocalEvent<CrayonComponent, UseInHandEvent>(OnCrayonUse, before: new[] { typeof(FoodSystem) });
         SubscribeLocalEvent<CrayonComponent, AfterInteractEvent>(OnCrayonAfterInteract, after: new[] { typeof(FoodSystem) });
         SubscribeLocalEvent<CrayonComponent, DroppedEvent>(OnCrayonDropped);
@@ -67,7 +67,8 @@ public sealed class CrayonSystem : SharedCrayonSystem
             return;
         }
 
-        if (!_decals.TryAddDecal(component.SelectedState, args.ClickLocation.Offset(new Vector2(-0.5f, -0.5f)), out _, component.Color, cleanable: true))
+        // minus in front of the angle because clockwise rotation feels more intuitive
+        if (!_decals.TryAddDecal(component.SelectedState, args.ClickLocation.Offset(new Vector2(-0.5f, -0.5f)), out _, component.Color, -component.Angle, cleanable: true))
             return;
 
         if (component.UseSound != null)
@@ -97,7 +98,7 @@ public sealed class CrayonSystem : SharedCrayonSystem
 
         _uiSystem.TryToggleUi(uid, SharedCrayonComponent.CrayonUiKey.Key, args.User);
 
-        _uiSystem.SetUiState(uid, SharedCrayonComponent.CrayonUiKey.Key, new CrayonBoundUserInterfaceState(component.SelectedState, component.SelectableColor, component.Color));
+        _uiSystem.SetUiState(uid, SharedCrayonComponent.CrayonUiKey.Key, new CrayonBoundUserInterfaceState(component.SelectedState, component.SelectableColor, component.Color, component.Angle));
         args.Handled = true;
     }
 
@@ -120,7 +121,15 @@ public sealed class CrayonSystem : SharedCrayonSystem
 
         component.Color = args.Color;
         Dirty(uid, component);
+    }
 
+
+    private void OnCrayonBoundUIAngle(EntityUid uid, CrayonComponent component, CrayonAngleMessage args)
+    {
+        if (args.Angle == component.Angle)
+            return;
+        component.Angle = args.Angle;
+        Dirty(uid, component);
     }
 
     private void OnCrayonInit(EntityUid uid, CrayonComponent component, ComponentInit args)

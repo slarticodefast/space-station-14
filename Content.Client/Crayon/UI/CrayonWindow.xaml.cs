@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Content.Client.Stylesheets;
 using Content.Shared.Crayon;
 using Content.Shared.Decals;
@@ -8,9 +7,6 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
 using Robust.Client.UserInterface.XAML;
 using Robust.Client.Utility;
-using Robust.Shared.Graphics;
-using Robust.Shared.Maths;
-using Robust.Shared.Utility;
 using static Robust.Client.UserInterface.Controls.BaseButton;
 
 namespace Content.Client.Crayon.UI
@@ -23,6 +19,7 @@ namespace Content.Client.Crayon.UI
         private Dictionary<string, Texture>? _decals;
         private string? _selected;
         private Color _color;
+        private float _angle;
 
         public CrayonWindow(CrayonBoundUserInterface owner)
         {
@@ -30,8 +27,54 @@ namespace Content.Client.Crayon.UI
 
             Owner = owner;
 
-            Search.OnTextChanged += _ => RefreshList();
+            AngleLineEdit.OnTextChanged += text =>
+            {
+                if (!float.TryParse((string?)text.Text, out var angle))
+                    angle = 0f;
+                _angle = ReduceAngle(angle);
+                Owner.OnAngleChanged(Angle.FromDegrees(_angle));
+            };
+            SearchLineEdit.OnTextChanged += _ => RefreshList();
             ColorSelector.OnColorChanged += SelectColor;
+            AngleMinus90.OnPressed += _ =>
+            {
+                _angle = ReduceAngle(_angle - 90);
+                AngleLineEdit.Text = _angle.ToString("G");
+                Owner.OnAngleChanged(Angle.FromDegrees(_angle));
+            };
+            AngleMinus45.OnPressed += _ =>
+            {
+                _angle = ReduceAngle(_angle - 45);
+                AngleLineEdit.Text = _angle.ToString("G");
+                Owner.OnAngleChanged(Angle.FromDegrees(_angle));
+            };
+            Angle0.OnPressed += _ =>
+            {
+                _angle = 0f;
+                AngleLineEdit.Text = _angle.ToString("G");
+                Owner.OnAngleChanged(Angle.FromDegrees(_angle));
+            };
+            AnglePlus45.OnPressed += _ =>
+            {
+                _angle = ReduceAngle(_angle + 45);
+                AngleLineEdit.Text = _angle.ToString("G");
+                Owner.OnAngleChanged(Angle.FromDegrees(_angle));
+            };
+            AnglePlus90.OnPressed += _ =>
+            {
+                _angle = ReduceAngle(_angle + 90);
+                AngleLineEdit.Text = _angle.ToString("G");
+                Owner.OnAngleChanged(Angle.FromDegrees(_angle));
+            };
+
+        }
+
+        private float ReduceAngle(float angle)
+        {
+            angle = angle % 360;
+            if (angle < 0)
+                angle += 360;
+            return angle;
         }
 
         private void SelectColor(Color color)
@@ -49,7 +92,7 @@ namespace Content.Client.Crayon.UI
             Grid.RemoveAllChildren();
             if (_decals == null) return;
 
-            var filter = Search.Text;
+            var filter = SearchLineEdit.Text;
             foreach (var (decal, tex) in _decals)
             {
                 if (!decal.Contains(filter))
@@ -99,6 +142,7 @@ namespace Content.Client.Crayon.UI
             _selected = state.Selected;
             ColorSelector.Visible = state.SelectableColor;
             _color = state.Color;
+            AngleLineEdit.Text = state.Angle.Degrees.ToString("G");
 
             if (ColorSelector.Visible)
             {

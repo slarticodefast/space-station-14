@@ -7,4 +7,13 @@ crayon-interact-used-up-text = The {$owner} got used up.
 crayon-interact-invalid-location = Can't reach there!
 
 ## UI
+
 crayon-window-title = Crayon
+crayon-window-angle-label = Angle:
+crayon-window-search-label = Search:
+
+crayon-window-angle-minus-90 = -90
+crayon-window-angle-minus-45 = -45
+crayon-window-angle-0 = 0
+crayon-window-angle-plus-45 = 45
+crayon-window-angle-plus-90 = 90

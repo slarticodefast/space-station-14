@@ -1,12 +1,22 @@
 ﻿<DefaultWindow xmlns="https://spacestation14.io"
             Title="{Loc 'crayon-window-title'}"
-            MinSize="250 300"
-            SetSize="250 300">
+            MinSize="300 400"
+            SetSize="300 400">
     <BoxContainer Orientation="Vertical">
         <ColorSelectorSliders Name="ColorSelector" Visible="False" />
-        <LineEdit Name="Search" />
+        <Label Name="AngleLabel" Text="{Loc 'crayon-window-angle-label'}" />
+        <BoxContainer Orientation="Horizontal">
+            <LineEdit Name="AngleLineEdit" MinWidth="64" HorizontalExpand="True"/>
+            <Button Name="AngleMinus90" StyleClasses="OpenBoth" SetWidth="40" Text="{Loc 'crayon-window-angle-minus-90'}" />
+            <Button Name="AngleMinus45" StyleClasses="OpenBoth" SetWidth="40 " Text="{Loc 'crayon-window-angle-minus-45'}" />
+            <Button Name="Angle0" StyleClasses="OpenBoth" SetWidth="40" Text="{Loc 'crayon-window-angle-0'}" />
+            <Button Name="AnglePlus45" StyleClasses="OpenBoth" SetWidth="40" Text="{Loc 'crayon-window-angle-plus-45'}" />
+            <Button Name="AnglePlus90" StyleClasses="OpenBoth" SetWidth="40" Text="{Loc 'crayon-window-angle-plus-90'}" />
+        </BoxContainer>
+        <Label Name="SearchLabel" Text="{Loc 'crayon-window-search-label'}" />
+        <LineEdit Name="SearchLineEdit" />
         <ScrollContainer VerticalExpand="True">
-            <GridContainer Name="Grid" Columns="6">
+            <GridContainer Name="Grid" Columns="8">
                 <!-- Crayon decals get added here by code -->
             </GridContainer>
         </ScrollContainer>
