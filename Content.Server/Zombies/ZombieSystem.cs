@@ -14,6 +14,7 @@ using Content.Shared.Mind;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Mobs.Systems;
+using Content.Shared.NameModifier.Components;
 using Content.Shared.NameModifier.EntitySystems;
 using Content.Shared.Popups;
 using Content.Shared.Weapons.Melee.Events;
@@ -38,6 +39,7 @@ namespace Content.Server.Zombies
         [Dependency] private readonly MobStateSystem _mobState = default!;
         [Dependency] private readonly SharedPopupSystem _popup = default!;
         [Dependency] private readonly NameModifierSystem _nameMod = default!;
+        [Dependency] private readonly MetaDataSystem _metaData = default!;
 
         public const SlotFlags ProtectiveSlots =
             SlotFlags.FEET |
@@ -282,7 +284,16 @@ namespace Content.Server.Zombies
             _humanoidAppearance.SetSkinColor(target, zombiecomp.BeforeZombifiedSkinColor, false);
             _bloodstream.ChangeBloodReagent(target, zombiecomp.BeforeZombifiedBloodReagent);
 
-            _nameMod.RefreshNameModifiers(target);
+            if (source != target && TryComp<NameModifierComponent>(source, out var sourceComp))
+            {
+                EnsureComp<NameModifierComponent>(target);
+                // this will call RefreshNameModifiers inside NameModifierSystem, so we don't have to do that here
+                _metaData.SetEntityName(target, sourceComp.BaseName);
+            }
+            else
+            {
+                _nameMod.RefreshNameModifiers(target);
+            }
             return true;
         }
 
