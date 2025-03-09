@@ -202,3 +202,19 @@
     polymorphSound: /Audio/Magic/ethereal_enter.ogg
     exitPolymorphSound: /Audio/Magic/ethereal_exit.ogg
     duration: 3
+
+# test item, don't keep this here
+- type: entity
+  id: PlushieLizardPolymorph
+  parent: BaseItem
+  suffix: polymorph
+  name: lizard plushie
+  components:
+  - type: Sprite
+    sprite: Objects/Fun/toys.rsi
+    state: plushie_lizard
+  - type: Item
+    heldPrefix: plushielizard
+  - type: TriggerOnActivate
+  - type: PolymorphOnTrigger
+    polymorph: ArtifactLizard
