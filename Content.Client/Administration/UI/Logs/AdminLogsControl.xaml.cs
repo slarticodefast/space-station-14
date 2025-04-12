@@ -184,6 +184,30 @@ public sealed partial class AdminLogsControl : Control
         UpdateLogs();
     }
 
+    // select players by their Guid
+    public void SelectPlayers(HashSet<Guid> players)
+    {
+        SelectedPlayers.Clear();
+
+        foreach (var control in PlayersContainer.Children)
+        {
+            if (control is not AdminLogPlayerButton playerButton)
+            {
+                continue;
+            }
+
+            if (players.Contains(playerButton.Id))
+            {
+                playerButton.Pressed = true;
+                SelectedPlayers.Add(playerButton.Id);
+            }
+            else
+                playerButton.Pressed = false;
+        }
+
+        UpdateLogs();
+    }
+
     public void SetTypesSelection(HashSet<LogType> selectedTypes, bool invert = false)
     {
         SelectedTypes.Clear();

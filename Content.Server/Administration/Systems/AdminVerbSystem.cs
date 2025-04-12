@@ -279,7 +279,6 @@ namespace Content.Server.Administration.Systems
                     });
                 }
 
-
                 // Admin Logs
                 if (_adminManager.HasAdminFlag(player, AdminFlags.Logs))
                 {
@@ -292,7 +291,11 @@ namespace Content.Server.Administration.Systems
                         {
                             var ui = new AdminLogsEui();
                             _euiManager.OpenEui(ui, player);
-                            ui.SetLogFilter(search:args.Target.Id.ToString());
+                            if (TryComp<ActorComponent>(args.Target, out var targetActor))
+                                ui.SetLogFilter(players: [targetActor.PlayerSession.UserId]); // filter for the target player
+                            else
+                                ui.SetLogFilter(search: args.Target.Id.ToString()); // search for the uid
+
                         },
                         Impact = LogImpact.Low
                     };

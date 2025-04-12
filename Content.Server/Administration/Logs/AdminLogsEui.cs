@@ -142,12 +142,13 @@ public sealed class AdminLogsEui : BaseEui
         }
     }
 
-    public void SetLogFilter(string? search = null, bool invertTypes = false, HashSet<LogType>? types = null)
+    public void SetLogFilter(string? search = null, bool invertTypes = false, HashSet<LogType>? types = null, HashSet<Guid>? players = null)
     {
         var message = new SetLogFilter(
             search,
             invertTypes,
-            types);
+            types,
+            players);
 
         SendMessage(message);
     }

@@ -155,6 +155,9 @@ public sealed class AdminLogsEui : BaseEui
                 if (setLogFilter.Types != null)
                     LogsControl.SetTypesSelection(setLogFilter.Types, setLogFilter.InvertTypes);
 
+                if (setLogFilter.Players != null)
+                    LogsControl.SelectPlayers(setLogFilter.Players);
+
                 break;
         }
     }
