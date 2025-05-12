@@ -338,7 +338,7 @@
 
 - type: entity
   parent: BasePlushie
-  id: PlushieLizard #Weh!
+  id: PlushieLizard
   name: lizard plushie
   description: An adorable stuffed toy that resembles a lizardperson. Made by CentComm as a token initiative to combat speciesism in work environments. "Welcome your new colleagues as you do this plush, with open arms!"
   components:
