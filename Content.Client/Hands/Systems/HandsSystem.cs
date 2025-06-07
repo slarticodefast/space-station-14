@@ -67,9 +67,9 @@ namespace Content.Client.Hands.Systems
             // we need to check that, even if we have the same amount, that the individual hands didn't change.
             if (!handsModified)
             {
-                foreach (var hand in component.Hands.Values)
+                foreach (var handName in component.Hands.Keys)
                 {
-                    if (state.Hands.Contains(hand))
+                    if (state.HandNames.Contains(handName))
                         continue;
                     handsModified = true;
                     break;
@@ -100,6 +100,8 @@ namespace Content.Client.Hands.Systems
                     }
                 }
 
+                // TODO: this sorts hands only when added by the component state
+                // but not if they are added by calling AddHand from shared, which predicts it
                 component.SortedHands.Clear();
                 component.SortedHands.AddRange(state.HandNames);
                 var sorted = addedHands.OrderBy(hand => component.SortedHands.IndexOf(hand.Name));

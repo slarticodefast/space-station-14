@@ -287,6 +287,7 @@ public sealed class HandsUIController : UIController, IOnStateEntered<GameplaySt
 
     private HandButton AddHand(string handName, HandLocation location)
     {
+        Log.Debug($"UI {handName}");
         var button = new HandButton(handName, location);
         button.StoragePressed += StorageActivate;
         button.Pressed += HandPressed;
