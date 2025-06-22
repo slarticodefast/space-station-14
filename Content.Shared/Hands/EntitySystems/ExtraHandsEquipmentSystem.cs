@@ -24,7 +24,7 @@ public sealed class ExtraHandsEquipmentSystem : EntitySystem
         {
             var handName = $"{GetNetEntity(ent.Owner).Id}-extra-{i}";
             Log.Debug($"add hand {handName} {args.Equipee}");
-            _hands.AddHand(args.Equipee, handName, HandLocation.Middle, handsComp);
+            _hands.AddHand((args.Equipee, handsComp), handName, HandLocation.Middle);
             ent.Comp.HandNames.Add(handName);
         }
     }
@@ -35,6 +35,6 @@ public sealed class ExtraHandsEquipmentSystem : EntitySystem
             return;
 
         foreach (var handName in ent.Comp.HandNames)
-            _hands.RemoveHand(args.Equipee, handName, handsComp);
+            _hands.RemoveHand((args.Equipee, handsComp), handName);
     }
 }
