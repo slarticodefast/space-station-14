@@ -115,3 +115,9 @@
   id: Hologram
   kind: source
   path: "/Textures/Shaders/hologram.swsl"
+
+# view cone restriction used by the welding mask
+- type: shader
+  id: ViewCone
+  kind: source
+  path: "/Textures/Shaders/view_cone.swsl"

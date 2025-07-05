@@ -707,6 +707,7 @@
     sprite: Clothing/Mask/welding-gas.rsi
   - type: FlashImmunity
   - type: EyeProtection
+  - type: ViewCone
   - type: PhysicalComposition
     materialComposition:
       Steel: 200

@@ -10,6 +10,7 @@
   - type: FlashImmunity
   - type: IdentityBlocker
   - type: EyeProtection
+  - type: ViewCone
   - type: PhysicalComposition
     materialComposition:
       Steel: 200
