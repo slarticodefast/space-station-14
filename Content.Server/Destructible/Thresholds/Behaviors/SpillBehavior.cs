@@ -20,14 +20,14 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
         /// <param name="owner">Entity on which behavior is executed</param>
         /// <param name="system">system calling the behavior</param>
         /// <param name="cause"></param>
-        public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
+        public void Execute(EntityUid owner, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
         {
-            var solutionContainerSystem = system.EntityManager.System<SharedSolutionContainerSystem>();
-            var spillableSystem = system.EntityManager.System<PuddleSystem>();
+            var solutionContainerSystem = entMan.System<SharedSolutionContainerSystem>();
+            var spillableSystem = entMan.System<PuddleSystem>();
 
-            var coordinates = system.EntityManager.GetComponent<TransformComponent>(owner).Coordinates;
+            var coordinates = entMan.GetComponent<TransformComponent>(owner).Coordinates;
 
-            if (system.EntityManager.TryGetComponent(owner, out SpillableComponent? spillableComponent) &&
+            if (entMan.TryGetComponent(owner, out SpillableComponent? spillableComponent) &&
                 solutionContainerSystem.TryGetSolution(owner, spillableComponent.SolutionName, out _, out var compSolution))
             {
                 spillableSystem.TrySplashSpillAt(owner, coordinates, compSolution, out _, false, user: cause);

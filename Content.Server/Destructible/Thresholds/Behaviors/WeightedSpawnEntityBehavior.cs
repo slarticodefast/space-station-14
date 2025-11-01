@@ -51,13 +51,13 @@ public sealed partial class WeightedSpawnEntityBehavior : IThresholdBehavior
     [DataField]
     public float SpawnAfter;
 
-    public void Execute(EntityUid uid, DestructibleSystem system, EntityUid? cause = null)
+    public void Execute(EntityUid uid, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
     {
         // Get the position at which to start initially spawning entities
-        var transform = system.EntityManager.System<TransformSystem>();
+        var transform = entMan.System<TransformSystem>();
         var position = transform.GetMapCoordinates(uid);
         // Helper function used to randomly get an offset to apply to the original position
-        Vector2 GetRandomVector() => new (system.Random.NextFloat(-SpawnOffset, SpawnOffset), system.Random.NextFloat(-SpawnOffset, SpawnOffset));
+        Vector2 GetRandomVector() => new(system.Random.NextFloat(-SpawnOffset, SpawnOffset), system.Random.NextFloat(-SpawnOffset, SpawnOffset));
         // Randomly pick the entity to spawn and randomly pick how many to spawn
         var entity = system.PrototypeManager.Index(WeightedEntityTable).Pick(system.Random);
         var amountToSpawn = system.Random.NextFloat(MinSpawn, MaxSpawn);
@@ -72,11 +72,11 @@ public sealed partial class WeightedSpawnEntityBehavior : IThresholdBehavior
             // spawn the spawner, assign it a lifetime, and assign the entity that it will spawn when despawned
             for (var i = 0; i < amountToSpawn; i++)
             {
-                var spawner = system.EntityManager.SpawnEntity(tempSpawnerProto.ID, position.Offset(GetRandomVector()));
-                system.EntityManager.EnsureComponent<TimedDespawnComponent>(spawner, out var timedDespawnComponent);
+                var spawner = entMan.SpawnEntity(tempSpawnerProto.ID, position.Offset(GetRandomVector()));
+                entMan.EnsureComponent<TimedDespawnComponent>(spawner, out var timedDespawnComponent);
                 timedDespawnComponent.Lifetime = SpawnAfter;
-                system.EntityManager.EnsureComponent<SpawnOnDespawnComponent>(spawner, out var spawnOnDespawnComponent);
-                system.EntityManager.System<SpawnOnDespawnSystem>().SetPrototype((spawner, spawnOnDespawnComponent), entity);
+                entMan.EnsureComponent<SpawnOnDespawnComponent>(spawner, out var spawnOnDespawnComponent);
+                entMan.System<SpawnOnDespawnSystem>().SetPrototype((spawner, spawnOnDespawnComponent), entity);
             }
         }
         else
@@ -84,7 +84,7 @@ public sealed partial class WeightedSpawnEntityBehavior : IThresholdBehavior
             // directly spawn the desired entities
             for (var i = 0; i < amountToSpawn; i++)
             {
-                system.EntityManager.SpawnEntity(entity, position.Offset(GetRandomVector()));
+                entMan.SpawnEntity(entity, position.Offset(GetRandomVector()));
             }
         }
     }

@@ -12,12 +12,12 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
         [DataField("containers")]
         public List<string> Containers = new();
 
-        public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
+        public void Execute(EntityUid owner, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
         {
-            if (!system.EntityManager.TryGetComponent<ContainerManagerComponent>(owner, out var containerManager))
+            if (!entMan.TryGetComponent<ContainerManagerComponent>(owner, out var containerManager))
                 return;
 
-            var containerSys = system.EntityManager.System<ContainerSystem>();
+            var containerSys = entMan.System<ContainerSystem>();
 
 
             foreach (var containerId in Containers)

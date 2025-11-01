@@ -12,13 +12,13 @@ namespace Content.Server.Destructible.Thresholds.Behaviors;
 public sealed partial class BurnBodyBehavior : IThresholdBehavior
 {
 
-    public void Execute(EntityUid bodyId, DestructibleSystem system, EntityUid? cause = null)
+    public void Execute(EntityUid bodyId, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
     {
-        var transformSystem = system.EntityManager.System<TransformSystem>();
-        var inventorySystem = system.EntityManager.System<InventorySystem>();
-        var sharedPopupSystem = system.EntityManager.System<SharedPopupSystem>();
+        var transformSystem = entMan.System<TransformSystem>();
+        var inventorySystem = entMan.System<InventorySystem>();
+        var sharedPopupSystem = entMan.System<SharedPopupSystem>();
 
-        if (system.EntityManager.TryGetComponent<InventoryComponent>(bodyId, out var comp))
+        if (entMan.TryGetComponent<InventoryComponent>(bodyId, out var comp))
         {
             foreach (var item in inventorySystem.GetHandOrInventoryEntities(bodyId))
             {
@@ -26,9 +26,9 @@ public sealed partial class BurnBodyBehavior : IThresholdBehavior
             }
         }
 
-        var bodyIdentity = Identity.Entity(bodyId, system.EntityManager);
+        var bodyIdentity = Identity.Entity(bodyId, entMan);
         sharedPopupSystem.PopupCoordinates(Loc.GetString("bodyburn-text-others", ("name", bodyIdentity)), transformSystem.GetMoverCoordinates(bodyId), PopupType.LargeCaution);
 
-        system.EntityManager.QueueDeleteEntity(bodyId);
+        entMan.QueueDeleteEntity(bodyId);
     }
 }

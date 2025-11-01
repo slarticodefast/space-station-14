@@ -11,7 +11,7 @@ public sealed partial class TriggerBehavior : IThresholdBehavior
     [DataField]
     public string? KeyOut { get; set; } = TriggerSystem.DefaultTriggerKey;
 
-    public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
+    public void Execute(EntityUid owner, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
     {
         system.TriggerSystem.Trigger(owner, cause, KeyOut);
     }

@@ -11,7 +11,7 @@ public sealed partial class SpawnGasBehavior : IThresholdBehavior
     [DataField("gasMixture", required: true)]
     public GasMixture Gas = new();
 
-    public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
+    public void Execute(EntityUid owner, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
     {
         var air = system.AtmosphereSystem.GetContainingMixture(owner, false, true);
 

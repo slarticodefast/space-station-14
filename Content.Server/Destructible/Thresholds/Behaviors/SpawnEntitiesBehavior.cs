@@ -29,15 +29,15 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
         [DataField]
         public bool SpawnInContainer;
 
-        public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
+        public void Execute(EntityUid owner, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
         {
-            var tSys = system.EntityManager.System<TransformSystem>();
+            var tSys = entMan.System<TransformSystem>();
             var position = tSys.GetMapCoordinates(owner);
 
             var getRandomVector = () => new Vector2(system.Random.NextFloat(-Offset, Offset), system.Random.NextFloat(-Offset, Offset));
 
             var executions = 1;
-            if (system.EntityManager.TryGetComponent<StackComponent>(owner, out var stack))
+            if (entMan.TryGetComponent<StackComponent>(owner, out var stack))
             {
                 executions = stack.Count;
             }
@@ -53,37 +53,37 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
                     if (count == 0)
                         continue;
 
-                    if (EntityPrototypeHelpers.HasComponent<StackComponent>(entityId, system.PrototypeManager, system.EntityManager.ComponentFactory))
+                    if (EntityPrototypeHelpers.HasComponent<StackComponent>(entityId, system.PrototypeManager, entMan.ComponentFactory))
                     {
                         var spawned = SpawnInContainer
-                            ? system.EntityManager.SpawnNextToOrDrop(entityId, owner)
-                            : system.EntityManager.SpawnEntity(entityId, position.Offset(getRandomVector()));
+                            ? entMan.SpawnNextToOrDrop(entityId, owner)
+                            : entMan.SpawnEntity(entityId, position.Offset(getRandomVector()));
                         system.StackSystem.SetCount((spawned, null), count);
 
-                        TransferForensics(spawned, system, owner);
+                        TransferForensics(spawned, entMan, system, owner);
                     }
                     else
                     {
                         for (var i = 0; i < count; i++)
                         {
                             var spawned = SpawnInContainer
-                                ? system.EntityManager.SpawnNextToOrDrop(entityId, owner)
-                                : system.EntityManager.SpawnEntity(entityId, position.Offset(getRandomVector()));
+                                ? entMan.SpawnNextToOrDrop(entityId, owner)
+                                : entMan.SpawnEntity(entityId, position.Offset(getRandomVector()));
 
-                            TransferForensics(spawned, system, owner);
+                            TransferForensics(spawned, entMan, system, owner);
                         }
                     }
                 }
             }
         }
 
-        public void TransferForensics(EntityUid spawned, DestructibleSystem system, EntityUid owner)
+        public void TransferForensics(EntityUid spawned, IEntityManager entMan, DestructibleSystem system, EntityUid owner)
         {
             if (!DoTransferForensics ||
-                !system.EntityManager.TryGetComponent<ForensicsComponent>(owner, out var forensicsComponent))
+                !entMan.TryGetComponent<ForensicsComponent>(owner, out var forensicsComponent))
                 return;
 
-            var comp = system.EntityManager.EnsureComponent<ForensicsComponent>(spawned);
+            var comp = entMan.EnsureComponent<ForensicsComponent>(spawned);
             comp.DNAs = forensicsComponent.DNAs;
 
             if (!system.Random.Prob(0.4f))

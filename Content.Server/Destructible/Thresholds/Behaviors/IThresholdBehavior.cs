@@ -15,6 +15,6 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
         ///     and other systems from.
         /// </param>
         /// <param name="cause">The entity that caused this behavior.</param>
-        void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null);
+        void Execute(EntityUid owner, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null);
     }
 }

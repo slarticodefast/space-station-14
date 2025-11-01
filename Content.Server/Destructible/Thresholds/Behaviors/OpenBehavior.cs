@@ -9,9 +9,9 @@ namespace Content.Server.Destructible.Thresholds.Behaviors;
 [DataDefinition]
 public sealed partial class OpenBehavior : IThresholdBehavior
 {
-    public void Execute(EntityUid uid, DestructibleSystem system, EntityUid? cause = null)
+    public void Execute(EntityUid uid, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
     {
-        var openable = system.EntityManager.System<OpenableSystem>();
+        var openable = entMan.System<OpenableSystem>();
         openable.TryOpen(uid);
     }
 }

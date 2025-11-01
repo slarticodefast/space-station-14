@@ -26,11 +26,11 @@ public sealed partial class PopupBehavior : IThresholdBehavior
     [DataField]
     public bool TargetOnly;
 
-    public void Execute(EntityUid uid, DestructibleSystem system, EntityUid? cause = null)
+    public void Execute(EntityUid uid, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
     {
-        var popup = system.EntityManager.System<SharedPopupSystem>();
+        var popup = entMan.System<SharedPopupSystem>();
         // popup is placed at coords since the entity could be deleted after, no more popup then
-        var coords = system.EntityManager.GetComponent<TransformComponent>(uid).Coordinates;
+        var coords = entMan.GetComponent<TransformComponent>(uid).Coordinates;
 
         if (TargetOnly)
             popup.PopupCoordinates(Loc.GetString(Popup), coords, uid, PopupType);

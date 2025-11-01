@@ -30,8 +30,6 @@ namespace Content.Server.Destructible
     public sealed partial class DestructibleSystem : SharedDestructibleSystem
     {
         [Dependency] public readonly IRobustRandom Random = default!;
-        public new IEntityManager EntityManager => base.EntityManager;
-
         [Dependency] public readonly AtmosphereSystem AtmosphereSystem = default!;
         [Dependency] public readonly AudioSystem AudioSystem = default!;
         [Dependency] public readonly BodySystem BodySystem = default!;
@@ -160,7 +158,7 @@ namespace Content.Server.Destructible
                     return;
 
                 // TODO: Replace with EntityEffects.
-                behavior.Execute(owner, this, cause);
+                behavior.Execute(owner, EntityManager, this, cause);
             }
         }
 

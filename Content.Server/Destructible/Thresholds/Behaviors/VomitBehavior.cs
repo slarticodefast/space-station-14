@@ -5,8 +5,8 @@ namespace Content.Server.Destructible.Thresholds.Behaviors;
 [DataDefinition]
 public sealed partial class VomitBehavior : IThresholdBehavior
 {
-    public void Execute(EntityUid uid, DestructibleSystem system, EntityUid? cause = null)
+    public void Execute(EntityUid uid, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
     {
-        system.EntityManager.System<VomitSystem>().Vomit(uid);
+        entMan.System<VomitSystem>().Vomit(uid);
     }
 }

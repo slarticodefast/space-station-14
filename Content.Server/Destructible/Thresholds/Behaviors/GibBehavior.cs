@@ -12,9 +12,9 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
 
         public LogImpact Impact => LogImpact.Extreme;
 
-        public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
+        public void Execute(EntityUid owner, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
         {
-            if (system.EntityManager.TryGetComponent(owner, out BodyComponent? body))
+            if (entMan.TryGetComponent(owner, out BodyComponent? body))
             {
                 system.BodySystem.GibBody(owner, _recursive, body);
             }

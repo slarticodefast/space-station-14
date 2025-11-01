@@ -23,13 +23,13 @@ namespace Content.Server.Destructible.Thresholds.Behaviors
         [DataField("max")]
         public int Max = 3;
 
-        public void Execute(EntityUid owner, DestructibleSystem system, EntityUid? cause = null)
+        public void Execute(EntityUid owner, IEntityManager entMan, DestructibleSystem system, EntityUid? cause = null)
         {
-            if (!system.EntityManager.TryGetComponent<VendingMachineComponent>(owner, out var vendingcomp) ||
-                !system.EntityManager.TryGetComponent<TransformComponent>(owner, out var xform))
+            if (!entMan.TryGetComponent<VendingMachineComponent>(owner, out var vendingcomp) ||
+                !entMan.TryGetComponent<TransformComponent>(owner, out var xform))
                 return;
 
-            var vendingMachineSystem = system.EntityManager.System<VendingMachineSystem>();
+            var vendingMachineSystem = entMan.System<VendingMachineSystem>();
             var inventory = vendingMachineSystem.GetAvailableInventory(owner, vendingcomp);
             if (inventory.Count <= 0)
                 return;
