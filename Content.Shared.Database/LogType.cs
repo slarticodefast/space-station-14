@@ -478,4 +478,9 @@ public enum LogType
     /// Events relating to midi playback.
     /// </summary>
     Instrument = 103,
+
+    /// <summary>
+    /// Events relating to game tutorial.
+    /// </summary>
+    Tutorial = 104,
 }

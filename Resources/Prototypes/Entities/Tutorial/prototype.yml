@@ -1,0 +1,120 @@
+- type: entity
+  parent: BaseStructure
+  id: TutorialPrototypeController
+  name: Tutorial Controller
+  components:
+  - type: Sprite
+    sprite: Structures/Machines/server.rsi
+    state: server-on
+  - type: TutorialController
+    steps:
+    - TutorialPrototypeStep001
+    - TutorialPrototypeStep002
+    - TutorialPrototypeStep003
+    - TutorialPrototypeStep004
+
+- type: entity
+  abstract: true
+  id: BaseTutorialStep
+  #categories: [ HideSpawnMenu ]
+  name: Tutorial Step
+  components:
+  - type: Clickable
+  - type: Sprite # give it a sprite for debugging purposes
+    sprite: Objects/Fun/Plushies/lizard.rsi
+    state: icon
+  - type: Speech
+  - type: TutorialStep
+
+- type: entity
+  parent: BaseTutorialStep
+  id: TutorialPrototypeStep001
+  components:
+  - type: TutorialStep
+    stepID: 001
+    chatMessage: "Welcome to SS14!" # TODO: Localization
+  - type: TimerTrigger
+    delay: 3
+  - type: TriggerOnSpawn
+  - type: CompleteTutorialStepOnTrigger # TODO: Make a parent for a timed chat only steps and allow queueing multiple messages
+    keysIn: [timer]
+    stepID: 001
+
+
+- type: entity
+  parent: BaseTutorialStep
+  id: TutorialPrototypeStep002
+  components:
+  - type: TutorialStep
+    stepID: 002
+    chatMessage: "Pick up an item by clicking on it."
+
+- type: entity
+  parent: Crowbar
+  id: CrowbarTutorial
+  components:
+  - type: TriggerOnTutorialStepStarted
+  - type: TriggerOnTutorialStepCompleted
+  - type: AddComponentsOnTrigger # TODO: MapTextOnTrigger since we will use this a lot
+    keysIn: [start_002]
+    components:
+    - type: MapText
+      text: "Pick me up!"
+  - type: RemoveComponentsOnTrigger
+    keysIn: [complete_002]
+    components:
+    - type: MapText
+  - type: TriggerOnGotInsertedIntoContainer # TODO: TriggerOnGettingPickedUpComponent
+  - type: CompleteTutorialStepOnTrigger
+    stepID: 002
+
+- type: entity
+  parent: BaseTutorialStep
+  id: TutorialPrototypeStep003
+  components:
+  - type: TutorialStep
+    stepID: 003
+    chatMessage: "Use WASD to move."
+
+- type: entity
+  parent: Catwalk
+  id: CatwalkTutorial
+  components:
+  - type: TriggerOnTutorialStepStarted
+  - type: TriggerOnTutorialStepCompleted
+  - type: AddComponentsOnTrigger # TODO: MapTextOnTrigger since we will use this a lot
+    keysIn: [start_003]
+    components:
+    - type: MapText
+      text: "Walk here!"
+  - type: RemoveComponentsOnTrigger
+    keysIn: [complete_003]
+    components:
+    - type: MapText
+  - type: TriggerOnCollide
+    fixtureID: collide
+  - type: WhitelistTriggerCondition
+    userWhitelist:
+      components:
+      - Actor
+  - type: CompleteTutorialStepOnTrigger
+    stepID: 003
+  - type: Fixtures
+    fixtures:
+      collide:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.4,-0.4,0.4,0.4"
+        hard: false
+        mask:
+          - ItemMask
+        layer:
+          - SlipLayer
+
+- type: entity
+  parent: BaseTutorialStep
+  id: TutorialPrototypeStep004
+  components:
+  - type: TutorialStep
+    stepID: 004
+    chatMessage: "Success!"
