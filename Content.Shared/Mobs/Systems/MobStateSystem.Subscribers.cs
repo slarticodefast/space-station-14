@@ -18,7 +18,7 @@ using Content.Shared.Speech;
 using Content.Shared.Standing;
 using Content.Shared.Strip.Components;
 using Content.Shared.Throwing;
-using Robust.Shared.Physics.Components;
+using Robust.Shared.GameStates;
 
 namespace Content.Shared.Mobs.Systems;
 
@@ -27,6 +27,8 @@ public partial class MobStateSystem
     //General purpose event subscriptions. If you can avoid it register these events inside their own systems
     private void SubscribeEvents()
     {
+        SubscribeLocalEvent<MobStateComponent, ComponentGetState>(OnComponentGetState);
+        SubscribeLocalEvent<MobStateComponent, ComponentHandleState>(OnComponentHandleState);
         SubscribeLocalEvent<MobStateComponent, BeforeGettingStrippedEvent>(OnGettingStripped);
         SubscribeLocalEvent<MobStateComponent, ChangeDirectionAttemptEvent>(CheckAct);
         SubscribeLocalEvent<MobStateComponent, UseAttemptEvent>(CheckAct);
@@ -49,6 +51,28 @@ public partial class MobStateSystem
         SubscribeLocalEvent<MobStateComponent, DamageModifyEvent>(OnDamageModify);
 
         SubscribeLocalEvent<MobStateComponent, UnbuckleAttemptEvent>(OnUnbuckleAttempt);
+    }
+
+    private void OnComponentGetState(Entity<MobStateComponent> ent, ref ComponentGetState args)
+    {
+        args.State = new MobStateComponentState(ent.Comp.CurrentState, ent.Comp.AllowedStates);
+    }
+
+    private void OnComponentHandleState(Entity<MobStateComponent> ent, ref ComponentHandleState args)
+    {
+        if (args.Current is not MobStateComponentState state)
+            return;
+
+        ent.Comp.AllowedStates = state.AllowedStates;
+
+        if (ent.Comp.CurrentState == state.CurrentState)
+            return;
+
+        var oldState = ent.Comp.CurrentState;
+        ent.Comp.CurrentState = state.CurrentState;
+
+        var ev = new MobStateChangedEvent(ent, ent, oldState, ent.Comp.CurrentState);
+        RaiseLocalEvent(ent.Owner, ev, true);
     }
 
     private void OnUnbuckleAttempt(Entity<MobStateComponent> ent, ref UnbuckleAttemptEvent args)

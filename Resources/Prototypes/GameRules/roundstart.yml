@@ -275,6 +275,8 @@
       - type: ChangelingIdentity
       - type: ChangelingTransform
       - type: ChangelingStasis
+        minStasisCooldown: 1 # for Debug Purposes
+        maxStasisCooldown: 1 # for Debug Purposes
       - type: ActionGrant
         actions:
         - ActionChangelingStore

@@ -56,14 +56,20 @@ public sealed class DamageOverlayUiController : UIController
         if (args.Target != _playerManager.LocalEntity)
             return;
 
+        if (_timing.IsFirstTimePredicted)
+            return;
+
         UpdateOverlays(args.Target, args.Component);
     }
 
     private void OnThresholdCheck(ref MobThresholdChecked args)
     {
-
         if (args.Target != _playerManager.LocalEntity)
             return;
+
+        if (_timing.IsFirstTimePredicted)
+            return;
+
         UpdateOverlays(args.Target, args.MobState, args.Damageable, args.Threshold);
     }
 
@@ -80,7 +86,7 @@ public sealed class DamageOverlayUiController : UIController
     {
         if (mobState == null && !EntityManager.TryGetComponent(entity, out mobState) ||
             thresholds == null && !EntityManager.TryGetComponent(entity, out thresholds) ||
-            damageable == null && !EntityManager.TryGetComponent(entity, out  damageable))
+            damageable == null && !EntityManager.TryGetComponent(entity, out damageable))
             return;
 
         if (!_mobThresholdSystem.TryGetIncapThreshold(entity, out var foundThreshold, thresholds))
@@ -92,7 +98,9 @@ public sealed class DamageOverlayUiController : UIController
             return; //this entity intentionally has no overlays
         }
 
-        var critThreshold = foundThreshold.Value;
+        if (_overlay.State == mobState.CurrentState)
+            return;
+
         _overlay.State = mobState.CurrentState;
 
         switch (mobState.CurrentState)
@@ -101,6 +109,7 @@ public sealed class DamageOverlayUiController : UIController
             {
                 FixedPoint2 painLevel = 0;
                 _overlay.PainLevel = 0;
+                var critThreshold = foundThreshold.Value;
 
                 if (!_statusEffects.TryEffectsWithComp<PainNumbnessStatusEffectComponent>(entity, out _))
                 {

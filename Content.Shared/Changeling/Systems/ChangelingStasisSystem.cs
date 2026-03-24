@@ -90,6 +90,9 @@ public sealed class ChangelingStasisSystem : EntitySystem
         if (ent.Comp.IsInStasis)
             return;
 
+        ent.Comp.IsInStasis = true;
+        Dirty(ent);
+
         // If going from Alive to Dead fake a death gasp.
         // If going from Critical to Dead then DeathGaspSystem is already doing this,
         // so we don't want to do it twice.
@@ -102,9 +105,6 @@ public sealed class ChangelingStasisSystem : EntitySystem
             _mobs.ChangeMobState(ent.Owner, MobState.Dead);
 
         _popup.PopupClient(Loc.GetString("changeling-stasis-enter"), ent.Owner, ent.Owner, PopupType.MediumCaution);
-
-        ent.Comp.IsInStasis = true;
-        Dirty(ent);
 
         if (ent.Comp.RegenStasisActionEntity == null)
             return;
@@ -136,6 +136,10 @@ public sealed class ChangelingStasisSystem : EntitySystem
         if (!ent.Comp.IsInStasis)
             return;
 
+        // Do this before chaning the mob state so that MobStateChangedEvent does not call CancelStasis.
+        ent.Comp.IsInStasis = false;
+        Dirty(ent);
+
         // Heal all damage.
         _damage.ClearAllDamage(ent.Owner);
 
@@ -151,9 +155,6 @@ public sealed class ChangelingStasisSystem : EntitySystem
 
         _popup.PopupPredicted(Loc.GetString("changeling-stasis-exit"), Loc.GetString("changeling-stasis-exit-others", ("user", ent.Owner)), ent.Owner, ent.Owner, PopupType.MediumCaution);
         _audio.PlayPredicted(ent.Comp.ExitSound, ent.Owner, ent.Owner);
-
-        ent.Comp.IsInStasis = false;
-        Dirty(ent);
 
         if (ent.Comp.RegenStasisActionEntity == null)
             return;
