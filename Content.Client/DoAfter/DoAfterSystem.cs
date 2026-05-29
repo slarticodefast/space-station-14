@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Content.Shared.DoAfter;
-using Content.Shared.Hands.Components;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Prototypes;
@@ -30,31 +29,6 @@ public sealed class DoAfterSystem : SharedDoAfterSystem
         _overlay.RemoveOverlay<DoAfterOverlay>();
     }
 
-#pragma warning disable RA0028 // No base call in overriden function
-    public override void Update(float frameTime)
-#pragma warning restore RA0028 // No base call in overriden function
-    {
-        // Currently this only predicts do afters initiated by the player.
-
-        // TODO maybe predict do-afters if the local player is the target of some other players do-after? Specifically
-        // ones that depend on the target not moving, because the cancellation of those do afters should be readily
-        // predictable by clients.
-
-        var playerEntity = _player.LocalEntity;
-
-        if (!TryComp(playerEntity, out ActiveDoAfterComponent? active))
-            return;
-
-        if (_metadata.EntityPaused(playerEntity.Value))
-            return;
-
-        var time = GameTiming.CurTime;
-        var comp = Comp<DoAfterComponent>(playerEntity.Value);
-        var xformQuery = GetEntityQuery<TransformComponent>();
-        var handsQuery = GetEntityQuery<HandsComponent>();
-        Update(playerEntity.Value, active, comp, time, xformQuery, handsQuery);
-    }
-
     /// <summary>
     /// Try to find an active do-after being executed by the local player.
     /// </summary>
@@ -66,7 +40,7 @@ public sealed class DoAfterSystem : SharedDoAfterSystem
     /// <returns>True if a do-after was found.</returns>
     public bool TryFindActiveDoAfter<T>(
         EntityUid entity,
-        [NotNullWhen(true)] out Shared.DoAfter.DoAfter? doAfter,
+        [NotNullWhen(true)] out Entity<DoAfterEntityComponent>? doAfter,
         [NotNullWhen(true)] out T? @event,
         out float progress)
         where T : DoAfterEvent
@@ -77,7 +51,7 @@ public sealed class DoAfterSystem : SharedDoAfterSystem
         @event = null;
         progress = default;
 
-        if (!TryComp(playerEntity, out ActiveDoAfterComponent? active))
+        if (!HasComp<ActiveDoAfterComponent>(playerEntity))
             return false;
 
         if (_metadata.EntityPaused(playerEntity.Value))
@@ -87,21 +61,22 @@ public sealed class DoAfterSystem : SharedDoAfterSystem
 
         var time = GameTiming.CurTime;
 
-        foreach (var candidate in comp.DoAfters.Values)
+        foreach (var candidateUid in comp.DoAfterContainer.ContainedEntities)
         {
-            if (candidate.Cancelled)
+            var candidateComp = Comp<DoAfterEntityComponent>(candidateUid);
+            if (candidateComp.Cancelled)
                 continue;
 
-            if (candidate.Args.Target != entity)
+            if (candidateComp.Target != entity)
                 continue;
 
-            if (candidate.Args.Event is not T candidateEvent)
+            if (candidateComp.Args.Event is not T candidateEvent)
                 continue;
 
+            doAfter = (candidateUid, candidateComp);
             @event = candidateEvent;
-            doAfter = candidate;
-            var elapsed = time - doAfter.StartTime;
-            progress = (float) Math.Min(1, elapsed.TotalSeconds / doAfter.Args.Delay.TotalSeconds);
+            var elapsed = time - candidateComp.StartTime;
+            progress = (float)Math.Min(1, elapsed.TotalSeconds / candidateComp.Args.Delay.TotalSeconds);
 
             return true;
         }

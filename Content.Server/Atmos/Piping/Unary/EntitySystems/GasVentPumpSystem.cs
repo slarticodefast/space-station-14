@@ -396,7 +396,7 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
                 DoContactInteraction = true,
                 Act = () =>
                 {
-                    var doAfter = new DoAfterArgs(EntityManager, user, ent.Comp.ManualLockoutDisableDoAfter, new VentScrewedDoAfterEvent(), ent, ent)
+                    var doAfter = new DoAfterArgs(ent.Comp.ManualLockoutDisableDoAfter, new VentScrewedDoAfterEvent())
                     {
                         BreakOnDamage = true,
                         NeedHand = true,
@@ -404,7 +404,7 @@ namespace Content.Server.Atmos.Piping.Unary.EntitySystems
                         BreakOnWeightlessMove = true,
                     };
 
-                    _doAfterSystem.TryStartDoAfter(doAfter);
+                    _doAfterSystem.TryStartDoAfter(doAfter, user, ent, target: ent, used: ent);
                 },
             };
 

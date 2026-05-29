@@ -42,7 +42,7 @@ public sealed class CommsHackerSystem : SharedCommsHackerSystem
         if (!_gloves.AbilityCheck(uid, args, out var target))
             return;
 
-        var doAfterArgs = new DoAfterArgs(EntityManager, uid, comp.Delay, new TerrorDoAfterEvent(), target: target, used: uid, eventTarget: uid)
+        var doAfterArgs = new DoAfterArgs(comp.Delay, new TerrorDoAfterEvent())
         {
             BreakOnDamage = true,
             BreakOnMove = true,
@@ -50,7 +50,7 @@ public sealed class CommsHackerSystem : SharedCommsHackerSystem
             CancelDuplicate = false
         };
 
-        _doAfter.TryStartDoAfter(doAfterArgs);
+        _doAfter.TryStartDoAfter(doAfterArgs, uid, uid, target: target, used: uid);
         args.Handled = true;
     }
 

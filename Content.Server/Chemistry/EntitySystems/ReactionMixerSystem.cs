@@ -32,9 +32,9 @@ public sealed partial class ReactionMixerSystem : EntitySystem
         if (!MixAttempt(entity, args.Target.Value, out _))
             return;
 
-        var doAfterArgs = new DoAfterArgs(EntityManager, args.User, entity.Comp.TimeToMix, new ReactionMixDoAfterEvent(), entity, args.Target.Value, entity);
+        var doAfterArgs = new DoAfterArgs(entity.Comp.TimeToMix, new ReactionMixDoAfterEvent());
 
-        _doAfterSystem.TryStartDoAfter(doAfterArgs);
+        _doAfterSystem.TryStartDoAfter(doAfterArgs, args.User, entity, target: args.Target, used: entity);
         args.Handled = true;
     }
 

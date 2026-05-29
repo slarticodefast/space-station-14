@@ -82,6 +82,7 @@ public sealed class GetItemActionsEvent : EntityEventArgs
 [Serializable, NetSerializable]
 public sealed class RequestPerformActionEvent : EntityEventArgs
 {
+    // TODO: Fix persistance. These cannot be serialized into yaml in case the DoAfter was started and the game state is saved.
     public readonly NetEntity Action;
     public readonly NetEntity? EntityTarget;
     public readonly NetCoordinates? EntityCoordinatesTarget;

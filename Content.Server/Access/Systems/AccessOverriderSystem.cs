@@ -52,17 +52,17 @@ public sealed class AccessOverriderSystem : SharedAccessOverriderSystem
         if (args.Target == null || !TryComp(args.Target, out AccessReaderComponent? accessReader))
             return;
 
-        if (!_interactionSystem.InRangeUnobstructed(args.User, (EntityUid) args.Target))
+        if (!_interactionSystem.InRangeUnobstructed(args.User, (EntityUid)args.Target))
             return;
 
-        var doAfterEventArgs = new DoAfterArgs(EntityManager, args.User, component.DoAfter, new AccessOverriderDoAfterEvent(), uid, target: args.Target, used: uid)
+        var doAfterEventArgs = new DoAfterArgs(component.DoAfter, new AccessOverriderDoAfterEvent())
         {
             BreakOnMove = true,
             BreakOnDamage = true,
             NeedHand = true,
         };
 
-        _doAfterSystem.TryStartDoAfter(doAfterEventArgs);
+        _doAfterSystem.TryStartDoAfter(doAfterEventArgs, args.User, uid, target: args.Target, used: uid);
     }
 
     private void OnDoAfter(EntityUid uid, AccessOverriderComponent component, AccessOverriderDoAfterEvent args)
@@ -70,9 +70,9 @@ public sealed class AccessOverriderSystem : SharedAccessOverriderSystem
         if (args.Handled || args.Cancelled)
             return;
 
-        if (args.Args.Target != null)
+        if (args.Target != null)
         {
-            component.TargetAccessReaderId = args.Args.Target.Value;
+            component.TargetAccessReaderId = args.Target.Value;
             _userInterface.OpenUi(uid, AccessOverriderUiKey.Key, args.User);
             UpdateUserInterface(uid, component, args);
         }

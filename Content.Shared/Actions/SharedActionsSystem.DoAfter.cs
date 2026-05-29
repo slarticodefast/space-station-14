@@ -12,34 +12,17 @@ public abstract partial class SharedActionsSystem
 
     private bool TryStartActionDoAfter(Entity<DoAfterArgsComponent> ent, Entity<DoAfterComponent?> performer, TimeSpan? originalUseDelay, RequestPerformActionEvent input)
     {
-        // relay to user
         if (!Resolve(performer, ref performer.Comp))
             return false;
 
-        var delay = ent.Comp.Delay;
+        var actionDoAfterEvent = new ActionDoAfterEvent(originalUseDelay, input);
 
-        var netEnt = GetNetEntity(performer);
-
-        var actionDoAfterEvent = new ActionDoAfterEvent(netEnt, originalUseDelay, input);
-
-        var doAfterArgs = new DoAfterArgs(EntityManager, performer, delay, actionDoAfterEvent, ent.Owner, performer)
+        var args = new DoAfterArgs(ent.Comp.DoAfterArgs)
         {
-            AttemptFrequency = ent.Comp.AttemptFrequency,
-            Broadcast = ent.Comp.Broadcast,
-            Hidden = ent.Comp.Hidden,
-            NeedHand = ent.Comp.NeedHand,
-            BreakOnHandChange = ent.Comp.BreakOnHandChange,
-            BreakOnDropItem = ent.Comp.BreakOnDropItem,
-            BreakOnMove = ent.Comp.BreakOnMove,
-            BreakOnWeightlessMove = ent.Comp.BreakOnWeightlessMove,
-            MovementThreshold = ent.Comp.MovementThreshold,
-            DistanceThreshold = ent.Comp.DistanceThreshold,
-            BreakOnDamage = ent.Comp.BreakOnDamage,
-            DamageThreshold = ent.Comp.DamageThreshold,
-            RequireCanInteract = ent.Comp.RequireCanInteract
+            Event = actionDoAfterEvent,
         };
 
-        return _doAfter.TryStartDoAfter(doAfterArgs, performer);
+        return _doAfter.TryStartDoAfter(ent.Comp.DoAfterArgs, performer, eventTarget: ent.Owner);
     }
 
     private void OnActionDoAfter(Entity<DoAfterArgsComponent> ent, ref ActionDoAfterEvent args)
@@ -47,10 +30,9 @@ public abstract partial class SharedActionsSystem
         if (!_actionQuery.TryComp(ent, out var actionComp))
             return;
 
-        var performer = GetEntity(args.Performer);
         var action = (ent, actionComp);
 
-        // If this doafter is on repeat and was cancelled, start use delay as expected
+        // If this DoAfter is on repeat and was cancelled, start use delay as expected
         if (args.Cancelled && ent.Comp.Repeat)
         {
             SetUseDelay(action, args.OriginalUseDelay);
@@ -71,15 +53,15 @@ public abstract partial class SharedActionsSystem
         if (args.Cancelled)
             return;
 
-        // Post original doafter, reduce the time on it now for other casts if ables
+        // Post original DoAfter, reduce the time on it now for other casts if ables
         if (ent.Comp.DelayReduction != null)
             args.Args.Delay = ent.Comp.DelayReduction.Value;
 
         // Validate again for charges, blockers, etc
-        if (TryPerformAction(args.Input, performer, skipDoActionRequest: true))
+        if (TryPerformAction(args.Input, args.User, skipDoActionRequest: true))
             return;
 
-        // Cancel this doafter if we can't validate the action
-        _doAfter.Cancel(args.DoAfter.Id, force: true);
+        // Cancel this DoAfter if we can't validate the action
+        _doAfter.Cancel(args.DoAfterEntity.AsNullable(), force: true);
     }
 }

@@ -10,11 +10,6 @@ namespace Content.Shared.Actions.Events;
 public sealed partial class ActionDoAfterEvent : DoAfterEvent
 {
     /// <summary>
-    /// The action performer
-    /// </summary>
-    public readonly NetEntity Performer;
-
-    /// <summary>
     /// The original action use delay, used for repeating actions
     /// </summary>
     public readonly TimeSpan? OriginalUseDelay;
@@ -24,9 +19,8 @@ public sealed partial class ActionDoAfterEvent : DoAfterEvent
     /// </summary>
     public readonly RequestPerformActionEvent Input;
 
-    public ActionDoAfterEvent(NetEntity performer, TimeSpan? originalUseDelay, RequestPerformActionEvent input)
+    public ActionDoAfterEvent(TimeSpan? originalUseDelay, RequestPerformActionEvent input)
     {
-        Performer = performer;
         OriginalUseDelay = originalUseDelay;
         Input = input;
     }

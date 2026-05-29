@@ -1,118 +1,69 @@
-using Content.Shared.Gravity;
-using Content.Shared.Hands.Components;
-using Content.Shared.Hands.EntitySystems;
-using Content.Shared.Interaction;
-using Content.Shared.Physics;
-using Robust.Shared.Utility;
-
 namespace Content.Shared.DoAfter;
 
 public abstract partial class SharedDoAfterSystem : EntitySystem
 {
-    [Dependency] private readonly IDynamicTypeFactory _factory = default!;
-    [Dependency] private readonly SharedGravitySystem _gravity = default!;
-    [Dependency] private readonly SharedInteractionSystem _interaction = default!;
-    [Dependency] private readonly SharedHandsSystem _hands = default!;
-
-    private DoAfter[] _doAfters = Array.Empty<DoAfter>();
-
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
 
-        var time = GameTiming.CurTime;
-        var xformQuery = GetEntityQuery<TransformComponent>();
-        var handsQuery = GetEntityQuery<HandsComponent>();
+        var curTime = GameTiming.CurTime;
 
-        var enumerator = EntityQueryEnumerator<ActiveDoAfterComponent, DoAfterComponent>();
-        while (enumerator.MoveNext(out var uid, out var active, out var comp))
+        var enumerator = EntityQueryEnumerator<DoAfterEntityComponent>();
+        while (enumerator.MoveNext(out var uid, out var comp))
         {
-            Update(uid, active, comp, time, xformQuery, handsQuery);
+            Update((uid, comp), curTime);
         }
     }
 
-    protected void Update(
-        EntityUid uid,
-        ActiveDoAfterComponent active,
-        DoAfterComponent comp,
-        TimeSpan time,
-        EntityQuery<TransformComponent> xformQuery,
-        EntityQuery<HandsComponent> handsQuery)
+    private void Update(Entity<DoAfterEntityComponent> ent, TimeSpan curTime)
     {
-        var dirty = false;
-
-        var values = comp.DoAfters.Values;
-        var count = values.Count;
-        if (_doAfters.Length < count)
-            _doAfters = new DoAfter[count];
-
-        values.CopyTo(_doAfters, 0);
-        for (var i = 0; i < count; i++)
+        if (ent.Comp.CancelledTime != null)
         {
-            var doAfter = _doAfters[i];
-            if (doAfter.CancelledTime != null)
-            {
-                if (time - doAfter.CancelledTime.Value > ExcessTime)
-                {
-                    comp.DoAfters.Remove(doAfter.Index);
-                    dirty = true;
-                }
-                continue;
-            }
-
-            if (doAfter.Completed)
-            {
-                if (time - doAfter.StartTime > doAfter.Args.Delay + ExcessTime)
-                {
-                    comp.DoAfters.Remove(doAfter.Index);
-                    dirty = true;
-                }
-                continue;
-            }
-
-            if (ShouldCancel(doAfter, xformQuery, handsQuery))
-            {
-                InternalCancel(doAfter, comp);
-                dirty = true;
-                continue;
-            }
-
-            if (time - doAfter.StartTime >= doAfter.Args.Delay)
-            {
-                TryComplete(doAfter, comp);
-                dirty = true;
-            }
+            if (curTime - ent.Comp.CancelledTime.Value > ExcessTime)
+                PredictedQueueDel(ent.Owner);
+            return;
         }
 
-        if (dirty)
-            Dirty(uid, comp);
+        if (ent.Comp.Completed)
+        {
+            if (curTime - ent.Comp.StartTime > ent.Comp.Args.Delay + ExcessTime)
+                PredictedQueueDel(ent.Owner);
+            return;
+        }
 
-        if (comp.DoAfters.Count == 0)
-            RemCompDeferred(uid, active);
+        if (ShouldCancel(ent))
+        {
+            Cancel(ent.AsNullable());
+            return;
+        }
+
+        if (curTime - ent.Comp.StartTime >= ent.Comp.Args.Delay)
+        {
+            TryComplete(ent);
+        }
     }
 
-    private bool TryAttemptEvent(DoAfter doAfter)
+    private bool TryAttemptEvent(Entity<DoAfterEntityComponent> ent)
     {
-        var args = doAfter.Args;
+        var args = ent.Comp.Args;
+        // Fill this in so that subscriptions can use the shorthands for the user etc.
+        args.Event.DoAfterEntity = ent;
 
-        if (args.ExtraCheck?.Invoke() == false)
-            return false;
-
-        if (doAfter.AttemptEvent == null)
+        if (ent.Comp.AttemptEvent == null)
         {
             // I feel like this is somewhat cursed, but its the only way I can think of without having to just send
             // redundant data over the network and increasing DoAfter boilerplate.
             var evType = typeof(DoAfterAttemptEvent<>).MakeGenericType(args.Event.GetType());
-            doAfter.AttemptEvent = _factory.CreateInstance(evType, new object[] { doAfter, args.Event });
+            ent.Comp.AttemptEvent = _factory.CreateInstance(evType, new object[] { ent, args.Event });
         }
 
-        args.Event.DoAfter = doAfter;
-        if (args.EventTarget != null)
-            RaiseLocalEvent(args.EventTarget.Value, doAfter.AttemptEvent, args.Broadcast);
+        args.Event.DoAfterEntity = ent;
+        if (ent.Comp.EventTarget != null)
+            RaiseLocalEvent(ent.Comp.EventTarget.Value, ent.Comp.AttemptEvent, args.Broadcast);
         else
-            RaiseLocalEvent(doAfter.AttemptEvent);
+            RaiseLocalEvent(ent.Comp.AttemptEvent);
 
-        var ev = (CancellableEntityEventArgs) doAfter.AttemptEvent;
+        var ev = (CancellableEntityEventArgs)ent.Comp.AttemptEvent;
         if (!ev.Cancelled)
             return true;
 
@@ -120,115 +71,109 @@ public abstract partial class SharedDoAfterSystem : EntitySystem
         return false;
     }
 
-    private void TryComplete(DoAfter doAfter, DoAfterComponent component)
+    private void TryComplete(Entity<DoAfterEntityComponent> ent)
     {
-        if (doAfter.Cancelled || doAfter.Completed)
+        if (ent.Comp.Cancelled || ent.Comp.Completed)
             return;
 
         // Perform final check (if required)
-        if (doAfter.Args.AttemptFrequency == AttemptFrequency.StartAndEnd
-            && !TryAttemptEvent(doAfter))
+        if (ent.Comp.Args.AttemptFrequency == AttemptFrequency.StartAndEnd
+            && !TryAttemptEvent(ent))
         {
-            InternalCancel(doAfter, component);
+            Cancel(ent.AsNullable());
             return;
         }
 
-        doAfter.Completed = true;
+        ent.Comp.Completed = true;
+        Dirty(ent);
 
-        RaiseDoAfterEvents(doAfter, component);
+        RaiseDoAfterEvents(ent);
 
-        if (doAfter.Args.Event.Repeat)
+        if (ent.Comp.Args.Event.Repeat)
         {
-            doAfter.StartTime = GameTiming.CurTime;
-            doAfter.Completed = false;
+            ent.Comp.StartTime = GameTiming.CurTime;
+            ent.Comp.Completed = false;
         }
     }
 
-    private bool ShouldCancel(DoAfter doAfter,
-        EntityQuery<TransformComponent> xformQuery,
-        EntityQuery<HandsComponent> handsQuery)
+    private bool ShouldCancel(Entity<DoAfterEntityComponent> ent)
     {
-        var args = doAfter.Args;
+        var args = ent.Comp.Args;
+
+        if (!_xformQuery.TryGetComponent(ent.Comp.User, out var userXform))
+            return true;
 
         //re-using xformQuery for Exists() checks.
-        if (args.Used is { } used && !xformQuery.HasComponent(used))
+        if (ent.Comp.Used is { Valid: true } used && !_xformQuery.HasComponent(used))
             return true;
 
-        if (args.EventTarget is {Valid: true} eventTarget && !xformQuery.HasComponent(eventTarget))
-            return true;
-
-        if (!xformQuery.TryGetComponent(args.User, out var userXform))
+        if (ent.Comp.EventTarget is { Valid: true } eventTarget && !_xformQuery.HasComponent(eventTarget))
             return true;
 
         TransformComponent? targetXform = null;
-        if (args.Target is { } target && !xformQuery.TryGetComponent(target, out targetXform))
+        if (ent.Comp.Target is { Valid: true } target && !_xformQuery.TryGetComponent(target, out targetXform))
             return true;
 
-        if (args.Used is { } @using && !xformQuery.HasComp(@using))
-            return true;
-
-        // TODO: Re-use existing xform query for these calculations.
-        if (args.BreakOnMove && !(!args.BreakOnWeightlessMove && _gravity.IsWeightless(args.User)))
+        if (args.BreakOnMove && !(!args.BreakOnWeightlessMove && _gravity.IsWeightless(ent.Comp.User)))
         {
             // Whether the user has moved too much from their original position.
-            if (!_transform.InRange(userXform.Coordinates, doAfter.UserPosition, args.MovementThreshold))
+            if (!_transform.InRange(userXform.Coordinates, ent.Comp.UserPosition, args.MovementThreshold))
                 return true;
 
             // Whether the distance between the user and target(if any) has changed too much.
             if (targetXform != null &&
                 targetXform.Coordinates.TryDistance(EntityManager, userXform.Coordinates, out var distance))
             {
-                if (Math.Abs(distance - doAfter.TargetDistance) > args.MovementThreshold)
+                if (Math.Abs(distance - ent.Comp.TargetDistance) > args.MovementThreshold)
                     return true;
             }
         }
 
         // Whether the user and the target are too far apart.
-        if (args.Target != null)
+        if (ent.Comp.Target != null)
         {
             if (args.DistanceThreshold != null)
             {
-                if (!_interaction.InRangeAndAccessible(args.User, args.Target.Value, args.DistanceThreshold.Value))
+                if (!_interaction.InRangeAndAccessible(ent.Comp.User, ent.Comp.Target.Value, args.DistanceThreshold.Value))
                     return true;
             }
         }
 
         // Whether the distance between the tool and the user has grown too much.
-        if (args.Used != null)
+        if (ent.Comp.Used != null)
         {
             if (args.DistanceThreshold != null)
             {
-                if (!_interaction.InRangeUnobstructed(args.User,
-                        args.Used.Value,
+                if (!_interaction.InRangeUnobstructed(ent.Comp.User,
+                        ent.Comp.Used.Value,
                         args.DistanceThreshold.Value))
                     return true;
             }
         }
 
-        if (args.AttemptFrequency == AttemptFrequency.EveryTick && !TryAttemptEvent(doAfter))
+        if (args.AttemptFrequency == AttemptFrequency.EveryTick && !TryAttemptEvent(ent))
             return true;
 
-        // Check if the do-after requires hands to perform at first
+        // Check if the DoAfter requires hands to perform at first
         // For example, you need hands to strip clothes off of someone
         // This does not mean their hand needs to be empty.
         if (args.NeedHand)
         {
-            if (!handsQuery.TryGetComponent(args.User, out var hands) || hands.Count == 0)
+            if (!_handsQuery.TryGetComponent(ent.Comp.User, out var hands) || hands.Count == 0)
                 return true;
 
             // If an item was in the user's hand to begin with,
             // check if the user is no longer holding the item.
-            if (args.BreakOnDropItem && doAfter.InitialItem != null && !_hands.IsHolding((args.User, hands), doAfter.InitialItem))
-                    return true;
+            if (args.BreakOnDropItem && ent.Comp.InitialItem != null && !_hands.IsHolding((ent.Comp.User, hands), ent.Comp.InitialItem))
+                return true;
 
             // If the user changes which hand is active at all, interrupt the do-after
-            if (args.BreakOnHandChange && hands.ActiveHandId != doAfter.InitialHand)
+            if (args.BreakOnHandChange && hands.ActiveHandId != ent.Comp.InitialHand)
                 return true;
         }
 
-        if (args.RequireCanInteract && !_actionBlocker.CanInteract(args.User, args.Target))
+        if (args.RequireCanInteract && !_actionBlocker.CanInteract(ent.Comp.User, ent.Comp.Target))
             return true;
-
 
         return false;
     }

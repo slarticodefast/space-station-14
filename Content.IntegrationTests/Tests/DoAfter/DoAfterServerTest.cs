@@ -30,6 +30,10 @@ namespace Content.IntegrationTests.Tests.DoAfter
             }
         };
 
+        // TODO: Add integration test for checking that the DoAfter event is also yaml-serializable for persistance reasons.
+        // Some DoAfter events currently violate this since they store NetEntities, which are not yaml-serializable.
+        // Fixing this is tricky though since you cannot use EntityUids either since they are not (net)serializable.
+        // But in some cases they can just use the existing user, target, used or eventTarget entities in the DoAfterEntityComponent.
         [Test]
         public async Task TestSerializable()
         {
@@ -68,21 +72,27 @@ namespace Content.IntegrationTests.Tests.DoAfter
             var timing = server.ResolveDependency<IGameTiming>();
             var doAfterSystem = entityManager.EntitySysManager.GetEntitySystem<SharedDoAfterSystem>();
             var ev = new TestDoAfterEvent();
+            Entity<DoAfterEntityComponent>? doAfterEnt = null;
 
             // That it finishes successfully
-            await server.WaitPost(() =>
+            await server.WaitAssertion(() =>
             {
                 var tickTime = 1.0f / timing.TickRate;
                 var mob = entityManager.SpawnEntity("DoAfterDummy", MapCoordinates.Nullspace);
-                var args = new DoAfterArgs(entityManager, mob, tickTime / 2, ev, null) { Broadcast = true };
+                var args = new DoAfterArgs(tickTime / 2, ev)
+                {
+                    Broadcast = true,
+                };
 #pragma warning disable NUnit2045 // Interdependent assertions.
-                Assert.That(doAfterSystem.TryStartDoAfter(args));
-                Assert.That(ev.Cancelled, Is.False);
+                Assert.That(doAfterSystem.TryStartDoAfter(args, out doAfterEnt, mob, null, null, null));
+                Assert.That(doAfterSystem.IsRunning(doAfterEnt.Value.AsNullable()), Is.True);
+                Assert.That(doAfterSystem.IsCancelled(doAfterEnt.Value.AsNullable()), Is.False);
 #pragma warning restore NUnit2045
             });
 
             await server.WaitRunTicks(1);
-            Assert.That(ev.Cancelled, Is.False);
+            Assert.That(doAfterSystem.IsRunning(doAfterEnt.Value.AsNullable()), Is.False);
+            Assert.That(doAfterSystem.IsCancelled(doAfterEnt.Value.AsNullable()), Is.True);
 
             await pair.CleanReturnAsync();
         }
@@ -96,28 +106,36 @@ namespace Content.IntegrationTests.Tests.DoAfter
             var timing = server.ResolveDependency<IGameTiming>();
             var doAfterSystem = entityManager.EntitySysManager.GetEntitySystem<SharedDoAfterSystem>();
             var ev = new TestDoAfterEvent();
+            Entity<DoAfterEntityComponent>? doAfterEnt = null;
 
-            await server.WaitPost(() =>
+            await server.WaitAssertion(() =>
             {
                 var tickTime = 1.0f / timing.TickRate;
 
                 var mob = entityManager.SpawnEntity("DoAfterDummy", MapCoordinates.Nullspace);
-                var args = new DoAfterArgs(entityManager, mob, tickTime * 2, ev, null) { Broadcast = true };
+                var args = new DoAfterArgs(tickTime / 2, ev)
+                {
+                    Broadcast = true,
+                };
 
-                if (!doAfterSystem.TryStartDoAfter(args, out var id))
+                if (!doAfterSystem.TryStartDoAfter(args, out doAfterEnt, mob, null, null, null))
                 {
                     Assert.Fail();
                     return;
                 }
 
-                Assert.That(!ev.Cancelled);
-                doAfterSystem.Cancel(id);
-                Assert.That(ev.Cancelled);
+                Assert.That(doAfterSystem.IsRunning(doAfterEnt.Value.AsNullable()), Is.True);
+                Assert.That(doAfterSystem.IsCancelled(doAfterEnt.Value.AsNullable()), Is.False);
+
+                doAfterSystem.Cancel(doAfterEnt.Value);
+                Assert.That(doAfterSystem.IsRunning(doAfterEnt.Value.AsNullable()), Is.False);
+                Assert.That(doAfterSystem.IsCancelled(doAfterEnt.Value.AsNullable()), Is.True);
 
             });
 
             await server.WaitRunTicks(3);
-            Assert.That(ev.Cancelled);
+            Assert.That(doAfterSystem.IsRunning(doAfterEnt.Value.AsNullable()), Is.False);
+            Assert.That(doAfterSystem.IsCancelled(doAfterEnt.Value.AsNullable()), Is.True);
 
             await pair.CleanReturnAsync();
         }

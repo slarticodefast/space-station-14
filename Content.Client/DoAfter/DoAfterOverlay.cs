@@ -1,14 +1,14 @@
 using System.Numerics;
-using Content.Shared.DoAfter;
 using Content.Client.UserInterface.Systems;
+using Content.Shared.DoAfter;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
-using Robust.Shared.Enums;
 using Robust.Client.Player;
+using Robust.Shared.Containers;
+using Robust.Shared.Enums;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
-using Robust.Shared.Containers;
 
 namespace Content.Client.DoAfter;
 
@@ -78,7 +78,7 @@ public sealed class DoAfterOverlay : Overlay
             if (xform.MapID != args.MapId)
                 continue;
 
-            if (comp.DoAfters.Count == 0)
+            if (comp.DoAfterContainer.Count == 0)
                 continue;
 
             var worldPosition = _transform.GetWorldPosition(xform, xformQuery);
@@ -107,11 +107,13 @@ public sealed class DoAfterOverlay : Overlay
 
             var isInContainer = _container.IsEntityOrParentInContainer(uid, meta, xform);
 
-            foreach (var doAfter in comp.DoAfters.Values)
+            foreach (var doAfterUid in comp.DoAfterContainer.ContainedEntities)
             {
+                var doAfterComp = _entManager.GetComponent<DoAfterEntityComponent>(doAfterUid);
+
                 // Hide some DoAfters from other players for stealthy actions (ie: thieving gloves)
                 var alpha = 1f;
-                if (doAfter.Args.Hidden || isInContainer)
+                if (doAfterComp.Args.Hidden || isInContainer)
                 {
                     if (uid != localEnt)
                         continue;
@@ -136,18 +138,18 @@ public sealed class DoAfterOverlay : Overlay
                 float elapsedRatio;
 
                 // if we're cancelled then flick red / off.
-                if (doAfter.CancelledTime != null)
+                if (doAfterComp.CancelledTime != null)
                 {
-                    var elapsed = doAfter.CancelledTime.Value - doAfter.StartTime;
-                    elapsedRatio = (float)Math.Min(1, elapsed.TotalSeconds / doAfter.Args.Delay.TotalSeconds);
-                    var cancelElapsed = (time - doAfter.CancelledTime.Value).TotalSeconds;
+                    var elapsed = doAfterComp.CancelledTime.Value - doAfterComp.StartTime;
+                    elapsedRatio = (float)Math.Min(1, elapsed.TotalSeconds / doAfterComp.Args.Delay.TotalSeconds);
+                    var cancelElapsed = (time - doAfterComp.CancelledTime.Value).TotalSeconds;
                     var flash = Math.Floor(cancelElapsed / FlashTime) % 2 == 0;
                     color = GetProgressColor(0, flash ? alpha : 0);
                 }
                 else
                 {
-                    var elapsed = time - doAfter.StartTime;
-                    elapsedRatio = (float)Math.Min(1, elapsed.TotalSeconds / doAfter.Args.Delay.TotalSeconds);
+                    var elapsed = time - doAfterComp.StartTime;
+                    elapsedRatio = (float)Math.Min(1, elapsed.TotalSeconds / doAfterComp.Args.Delay.TotalSeconds);
                     color = GetProgressColor(elapsedRatio, alpha);
                 }
 

@@ -3,36 +3,38 @@ using Robust.Shared.Serialization;
 namespace Content.Shared.DoAfter;
 
 /// <summary>
-///     Base type for events that get raised when a do-after is canceled or finished.
+/// Base type for events that get raised when a do-after is canceled or finished.
 /// </summary>
 [Serializable, NetSerializable]
 [ImplicitDataDefinitionForInheritors]
 public abstract partial class DoAfterEvent : HandledEntityEventArgs
 {
     /// <summary>
-    ///     The do after that triggered this event. This will be set by the do after system before the event is raised.
+    /// The DoAfterEntity that triggered this event. This will be set by the DoAfterSystem before the event is raised.
+    /// So don't use this outside subscriptions to this event.
+    /// Same for the shorthands for the user etc. below.
     /// </summary>
     [NonSerialized]
-    public DoAfter DoAfter = default!;
+    public Entity<DoAfterEntityComponent> DoAfterEntity;
 
     //TODO: User pref to toggle repeat on specific doafters
     /// <summary>
-    ///     If set to true while handling this event, then the DoAfter will automatically be repeated.
+    /// If set to true while handling this event, then the DoAfter will automatically be repeated.
     /// </summary>
     public bool Repeat = false;
 
     /// <summary>
-    ///     Duplicate the current event. This is used by state handling, and should copy by value unless the reference
-    ///     types are immutable.
+    /// Duplicate the current event. This is used by state handling, and should copy by value unless the reference
+    /// types are immutable.
     /// </summary>
     public abstract DoAfterEvent Clone();
 
     #region Convenience properties
-    public bool Cancelled => DoAfter.Cancelled;
-    public EntityUid User => DoAfter.Args.User;
-    public EntityUid? Target => DoAfter.Args.Target;
-    public EntityUid? Used => DoAfter.Args.Used;
-    public DoAfterArgs Args => DoAfter.Args;
+    public bool Cancelled => DoAfterEntity.Comp.Cancelled;
+    public EntityUid User => DoAfterEntity.Comp.User;
+    public EntityUid? Target => DoAfterEntity.Comp.Target;
+    public EntityUid? Used => DoAfterEntity.Comp.Used;
+    public DoAfterArgs Args => DoAfterEntity.Comp.Args;
     #endregion
 
     /// <summary>
@@ -45,11 +47,11 @@ public abstract partial class DoAfterEvent : HandledEntityEventArgs
 }
 
 /// <summary>
-///     Blank / empty event for simple do afters that carry no information.
+/// Blank / empty event for simple do afters that carry no information.
 /// </summary>
 /// <remarks>
-///     This just exists as a convenience to avoid having to re-implement Clone() for every simply DoAfterEvent.
-///     If an event actually contains data, it should actually override Clone().
+/// This just exists as a convenience to avoid having to re-implement Clone() for every simply DoAfterEvent.
+/// If an event actually contains data, it should actually override Clone().
 /// </remarks>
 [Serializable, NetSerializable]
 public abstract partial class SimpleDoAfterEvent : DoAfterEvent
@@ -62,34 +64,21 @@ public abstract partial class SimpleDoAfterEvent : DoAfterEvent
     public override DoAfterEvent Clone() => this;
 }
 
-// Placeholder for obsolete async do afters
-[Serializable, NetSerializable]
-[Obsolete("Dont use async DoAfters")]
-public sealed partial class AwaitedDoAfterEvent : SimpleDoAfterEvent
-{
-}
-
 /// <summary>
-///     This event will optionally get raised every tick while a do-after is in progress to check whether the do-after
-///     should be canceled.
+/// This event will optionally get raised every tick while a do-after is in progress to check whether the
+/// DoAfter should be canceled.
 /// </summary>
-public sealed partial class DoAfterAttemptEvent<TEvent> : CancellableEntityEventArgs where TEvent : DoAfterEvent
+public sealed partial class DoAfterAttemptEvent<TEvent>(Entity<DoAfterEntityComponent> doAfter, TEvent @event) : CancellableEntityEventArgs where TEvent : DoAfterEvent
 {
     /// <summary>
-    ///     The do after that triggered this event.
+    /// The DoAfter that triggered this event.
     /// </summary>
-    public readonly DoAfter DoAfter;
+    public readonly Entity<DoAfterEntityComponent> DoAfter = doAfter;
 
     /// <summary>
-    ///     The event that the DoAfter will raise after successfully finishing. Given that this event has the data
-    ///     required to perform the interaction, it should also contain the data required to validate/attempt the
-    ///     interaction.
+    /// The event that the DoAfter will raise after successfully finishing. Given that this event has the data
+    /// required to perform the interaction, it should also contain the data required to validate/attempt the
+    /// interaction.
     /// </summary>
-    public readonly TEvent Event;
-
-    public DoAfterAttemptEvent(DoAfter doAfter, TEvent @event)
-    {
-        DoAfter = doAfter;
-        Event = @event;
-    }
+    public readonly TEvent Event = @event;
 }

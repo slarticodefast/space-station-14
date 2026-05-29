@@ -35,28 +35,29 @@ public sealed partial class InteractWithOperator : HTNOperator
     // the code currently relies on the result of a TryGetValue
     public override void Startup(NPCBlackboard blackboard)
     {
-        blackboard.Remove<ushort>(CurrentDoAfter);
-
+        blackboard.Remove<EntityUid>(CurrentDoAfter);
     }
 
     // Not really sure if we should clean it up, I guess some operator could use it
     public override void TaskShutdown(NPCBlackboard blackboard, HTNOperatorStatus status)
     {
-        blackboard.Remove<ushort>(CurrentDoAfter);
+        blackboard.Remove<EntityUid>(CurrentDoAfter);
     }
 
     public override HTNOperatorStatus Update(NPCBlackboard blackboard, float frameTime)
     {
         var owner = blackboard.GetValue<EntityUid>(NPCBlackboard.Owner);
 
-        // Handle ongoing doAfter, and store the doAfter.nextId so we can detect if we started one
-        ushort nextId = 0;
+        // Handle ongoing doAfter
         if (_entManager.TryGetComponent<DoAfterComponent>(owner, out var doAfter))
         {
             // if CurrentDoAfter contains something, we have an active doAfter
-            if (blackboard.TryGetValue<ushort>(CurrentDoAfter, out var doAfterId, _entManager))
+            if (blackboard.TryGetValue<EntityUid>(CurrentDoAfter, out var doAfterUid, _entManager))
             {
-                var status = _doAfterSystem.GetStatus(owner, doAfterId, null);
+                if (!_entManager.EntityExists(doAfterUid))
+                    return HTNOperatorStatus.Finished; // If the DoAfter entity is deleted it must have been finished.
+
+                var status = _doAfterSystem.GetStatus(doAfterUid);
                 return status switch
                 {
                     DoAfterStatus.Running => HTNOperatorStatus.Continuing,
@@ -64,10 +65,7 @@ public sealed partial class InteractWithOperator : HTNOperator
                     _ => HTNOperatorStatus.Failed
                 };
             }
-
-            nextId = doAfter.NextId;
         }
-
 
         if (_entManager.TryGetComponent<UseDelayComponent>(owner, out var useDelay) && _entManager.System<UseDelaySystem>().IsDelayed((owner, useDelay)) ||
             !blackboard.TryGetValue<EntityUid>(TargetKey, out var moveTarget, _entManager) ||
@@ -84,14 +82,14 @@ public sealed partial class InteractWithOperator : HTNOperator
         _entManager.System<InteractionSystem>().UserInteraction(owner, targetXform.Coordinates, moveTarget);
 
         // Detect doAfter, save it, and don't exit from this operator
-        if (doAfter != null && nextId != doAfter.NextId)
+        if (doAfter != null && doAfter.DoAfterContainer.Count != 0)
         {
-            blackboard.SetValue(CurrentDoAfter, nextId);
+            blackboard.SetValue(CurrentDoAfter, doAfter.DoAfterContainer.ContainedEntities[0]);
             return HTNOperatorStatus.Continuing;
         }
 
         // We shouldn't arrive here if we start a doafter, so fail if we expected a doafter
-        if(ExpectDoAfter)
+        if (ExpectDoAfter)
             return HTNOperatorStatus.Failed;
 
         return HTNOperatorStatus.Finished;

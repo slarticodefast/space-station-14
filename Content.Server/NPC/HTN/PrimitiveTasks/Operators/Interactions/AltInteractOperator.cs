@@ -36,16 +36,18 @@ public sealed partial class AltInteractOperator : HTNOperator
 
         if (_entManager.TryGetComponent<DoAfterComponent>(owner, out var doAfter))
         {
-            count = doAfter.DoAfters.Count;
+            count = doAfter.DoAfterContainer.Count;
         }
 
         var result = intSystem.AltInteract(owner, target);
 
         // Interaction started a doafter so set the idle time to it.
-        if (result && doAfter != null && count != doAfter.DoAfters.Count)
+        if (result && doAfter != null && count != doAfter.DoAfterContainer.Count)
         {
-            var wait = doAfter.DoAfters.First().Value.Args.Delay;
-            blackboard.SetValue(IdleKey, (float) wait.TotalSeconds + 0.5f);
+            var firstDoAfterUid = doAfter.DoAfterContainer.ContainedEntities[0];
+            var firstDoAfterComp = _entManager.GetComponent<DoAfterEntityComponent>(firstDoAfterUid);
+            var waitTime = firstDoAfterComp.Args.Delay;
+            blackboard.SetValue(IdleKey, (float)waitTime.TotalSeconds + 0.5f);
         }
         else
         {
